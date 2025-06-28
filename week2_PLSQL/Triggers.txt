@@ -1,0 +1,110 @@
+import java.time.LocalDateTime;
+import java.util.*;
+
+class Customer {
+    int id;
+    String name;
+    LocalDateTime lastModified;
+
+    public Customer(int id, String name) {
+        this.id = id;
+        this.name = name;
+        this.lastModified = LocalDateTime.now();
+    }
+}
+
+class Transaction {
+    int accountId;
+    double amount;
+    String type; // "deposit" or "withdraw"
+    LocalDateTime timestamp;
+
+    public Transaction(int accountId, double amount, String type) {
+        this.accountId = accountId;
+        this.amount = amount;
+        this.type = type;
+        this.timestamp = LocalDateTime.now();
+    }
+}
+
+class AuditLog {
+    String message;
+    LocalDateTime timestamp;
+
+    public AuditLog(String message) {
+        this.message = message;
+        this.timestamp = LocalDateTime.now();
+    }
+}
+
+public class BankTriggerSimulation {
+
+    static Map<Integer, Customer> customers = new HashMap<>();
+    static Map<Integer, Double> accountBalances = new HashMap<>();
+    static List<Transaction> transactions = new ArrayList<>();
+    static List<AuditLog> auditLogs = new ArrayList<>();
+
+    // Scenario 1: Simulate trigger for updating customer's last modified date
+    public static void updateCustomerName(int customerId, String newName) {
+        if (customers.containsKey(customerId)) {
+            Customer c = customers.get(customerId);
+            c.name = newName;
+            c.lastModified = LocalDateTime.now(); // Trigger simulation
+            System.out.println("Scenario 1: Customer updated. LastModified = " + c.lastModified);
+        } else {
+            System.out.println("Customer not found.");
+        }
+    }
+
+    // Scenario 2 & 3: Simulate trigger for inserting a transaction
+    public static void insertTransaction(int accountId, double amount, String type) {
+        try {
+            // Trigger 3: Enforce rules
+            if (!accountBalances.containsKey(accountId)) {
+                throw new Exception("Account not found.");
+            }
+
+            if (type.equalsIgnoreCase("withdraw")) {
+                if (amount <= 0) throw new Exception("Withdrawal amount must be positive.");
+                if (accountBalances.get(accountId) < amount) throw new Exception("Insufficient balance.");
+                accountBalances.put(accountId, accountBalances.get(accountId) - amount);
+            } else if (type.equalsIgnoreCase("deposit")) {
+                if (amount <= 0) throw new Exception("Deposit amount must be positive.");
+                accountBalances.put(accountId, accountBalances.get(accountId) + amount);
+            } else {
+                throw new Exception("Invalid transaction type.");
+            }
+
+            // Insert the transaction
+            Transaction t = new Transaction(accountId, amount, type);
+            transactions.add(t);
+
+            // Trigger 2: Insert into Audit Log
+            auditLogs.add(new AuditLog("Transaction: " + type + " of ₹" + amount + " for Account " + accountId));
+            System.out.println("Scenario 2 & 3: Transaction successful and logged.");
+        } catch (Exception e) {
+            System.err.println("Transaction Error: " + e.getMessage());
+        }
+    }
+
+    public static void main(String[] args) {
+        // Initialize data
+        customers.put(1, new Customer(1, "Ravi"));
+        accountBalances.put(101, 10000.0);
+
+        // Scenario 1: Update customer
+        updateCustomerName(1, "Ravi Kumar");
+
+        // Scenario 2 & 3: Transactions
+        insertTransaction(101, 5000, "withdraw");  // valid withdrawal
+        insertTransaction(101, -1000, "deposit");  // invalid deposit
+        insertTransaction(101, 15000, "withdraw"); // insufficient balance
+        insertTransaction(101, 2000, "deposit");   // valid deposit
+
+        // Print audit logs
+        System.out.println("\nAudit Logs:");
+        for (AuditLog log : auditLogs) {
+            System.out.println(log.timestamp + " - " + log.message);
+        }
+    }
+}

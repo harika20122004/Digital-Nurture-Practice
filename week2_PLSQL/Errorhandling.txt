@@ -1,0 +1,107 @@
+import java.util.*;
+
+class Account {
+    int id;
+    double balance;
+
+    public Account(int id, double balance) {
+        this.id = id;
+        this.balance = balance;
+    }
+}
+
+class Employee {
+    int id;
+    double salary;
+
+    public Employee(int id, double salary) {
+        this.id = id;
+        this.salary = salary;
+    }
+}
+
+class Customer {
+    int id;
+    String name;
+
+    public Customer(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+}
+
+public class BankErrorHandling {
+
+    static Map<Integer, Account> accounts = new HashMap<>();
+    static Map<Integer, Employee> employees = new HashMap<>();
+    static Map<Integer, Customer> customers = new HashMap<>();
+
+    // Scenario 1: Safe fund transfer
+    public static void SafeTransferFunds(int fromId, int toId, double amount) {
+        try {
+            if (!accounts.containsKey(fromId) || !accounts.containsKey(toId)) {
+                throw new Exception("Invalid account ID(s).");
+            }
+            Account from = accounts.get(fromId);
+            Account to = accounts.get(toId);
+            if (from.balance < amount) {
+                throw new Exception("Insufficient funds in source account.");
+            }
+
+            // Simulate transaction
+            from.balance -= amount;
+            to.balance += amount;
+            System.out.println("Funds transferred successfully from Account " + fromId + " to Account " + toId);
+        } catch (Exception e) {
+            System.err.println("Scenario 1 Error: " + e.getMessage());
+        }
+    }
+
+    // Scenario 2: Update employee salary
+    public static void UpdateSalary(int empId, double percentIncrease) {
+        try {
+            if (!employees.containsKey(empId)) {
+                throw new Exception("Employee ID not found.");
+            }
+            Employee emp = employees.get(empId);
+            emp.salary += emp.salary * (percentIncrease / 100);
+            System.out.println("Salary updated for Employee ID " + empId + ". New salary: " + emp.salary);
+        } catch (Exception e) {
+            System.err.println("Scenario 2 Error: " + e.getMessage());
+        }
+    }
+
+    // Scenario 3: Add new customer
+    public static void AddNewCustomer(int custId, String name) {
+        try {
+            if (customers.containsKey(custId)) {
+                throw new Exception("Customer ID already exists.");
+            }
+            customers.put(custId, new Customer(custId, name));
+            System.out.println("Customer added: " + name);
+        } catch (Exception e) {
+            System.err.println("Scenario 3 Error: " + e.getMessage());
+        }
+    }
+
+    public static void main(String[] args) {
+        // Setup demo data
+        accounts.put(1, new Account(1, 5000));
+        accounts.put(2, new Account(2, 3000));
+        employees.put(100, new Employee(100, 40000));
+        customers.put(201, new Customer(201, "Ravi"));
+
+        // Test Scenario 1: Fund Transfer
+        SafeTransferFunds(1, 2, 2000);     // success
+        SafeTransferFunds(1, 3, 1000);     // invalid account
+        SafeTransferFunds(2, 1, 5000);     // insufficient funds
+
+        // Test Scenario 2: Update Salary
+        UpdateSalary(100, 10);             // success
+        UpdateSalary(999, 5);              // invalid employee
+
+        // Test Scenario 3: Add Customer
+        AddNewCustomer(202, "Anita");      // success
+        AddNewCustomer(201, "Ravi");       // already exists
+    }
+}

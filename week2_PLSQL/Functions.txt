@@ -1,0 +1,62 @@
+import java.time.*;
+import java.util.*;
+
+public class BankFunctions {
+
+    // Data structure for storing account balances
+    static Map<Integer, Double> accountBalances = new HashMap<>();
+
+    // Scenario 1: Calculate customer's age from DOB
+    public static int CalculateAge(LocalDate dob) {
+        LocalDate today = LocalDate.now();
+        return Period.between(dob, today).getYears();
+    }
+
+    // Scenario 2: Calculate monthly loan installment
+    public static double CalculateMonthlyInstallment(double loanAmount, double annualInterestRate, int loanDurationYears) {
+        double monthlyInterestRate = annualInterestRate / 12 / 100;
+        int numberOfPayments = loanDurationYears * 12;
+
+        // Using EMI formula: P * r * (1 + r)^n / ((1 + r)^n - 1)
+        if (monthlyInterestRate == 0) {
+            return loanAmount / numberOfPayments;
+        }
+
+        double emi = loanAmount * monthlyInterestRate *
+                     Math.pow(1 + monthlyInterestRate, numberOfPayments) /
+                     (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
+        return emi;
+    }
+
+    // Scenario 3: Check if account has sufficient balance
+    public static boolean HasSufficientBalance(int accountId, double amount) {
+        if (!accountBalances.containsKey(accountId)) {
+            System.out.println("Account ID not found.");
+            return false;
+        }
+        return accountBalances.get(accountId) >= amount;
+    }
+
+    public static void main(String[] args) {
+        // Scenario 1: Age Calculation
+        LocalDate dob = LocalDate.of(1990, 6, 15);
+        int age = CalculateAge(dob);
+        System.out.println("Scenario 1: Age is " + age + " years");
+
+        // Scenario 2: Loan Installment Calculation
+        double installment = CalculateMonthlyInstallment(500000, 7.5, 10); // Rs. 5 lakh loan, 7.5% interest, 10 years
+        System.out.println("Scenario 2: Monthly Installment = ₹" + String.format("%.2f", installment));
+
+        // Scenario 3: Sufficient Balance Check
+        accountBalances.put(101, 12000.0);
+        accountBalances.put(102, 3000.0);
+
+        double amountToWithdraw = 5000;
+
+        boolean result1 = HasSufficientBalance(101, amountToWithdraw);
+        System.out.println("Scenario 3: Account 101 has sufficient balance? " + result1);
+
+        boolean result2 = HasSufficientBalance(102, amountToWithdraw);
+        System.out.println("Scenario 3: Account 102 has sufficient balance? " + result2);
+    }
+}

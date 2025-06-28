@@ -1,0 +1,104 @@
+import java.util.*;
+
+class SavingsAccount {
+    int accountId;
+    double balance;
+
+    public SavingsAccount(int accountId, double balance) {
+        this.accountId = accountId;
+        this.balance = balance;
+    }
+}
+
+class Employee {
+    int empId;
+    String department;
+    double salary;
+
+    public Employee(int empId, String department, double salary) {
+        this.empId = empId;
+        this.department = department;
+        this.salary = salary;
+    }
+}
+
+class BankAccount {
+    int accountId;
+    double balance;
+
+    public BankAccount(int accountId, double balance) {
+        this.accountId = accountId;
+        this.balance = balance;
+    }
+}
+
+public class BankProcedures {
+
+    static Map<Integer, SavingsAccount> savingsAccounts = new HashMap<>();
+    static List<Employee> employees = new ArrayList<>();
+    static Map<Integer, BankAccount> bankAccounts = new HashMap<>();
+
+    // Scenario 1: Process monthly interest on savings accounts (1%)
+    public static void ProcessMonthlyInterest() {
+        for (SavingsAccount acc : savingsAccounts.values()) {
+            double interest = acc.balance * 0.01;
+            acc.balance += interest;
+            System.out.println("Scenario 1: Account " + acc.accountId + " updated with interest. New Balance: " + acc.balance);
+        }
+    }
+
+    // Scenario 2: Update employee bonus for a given department
+    public static void UpdateEmployeeBonus(String department, double bonusPercent) {
+        for (Employee emp : employees) {
+            if (emp.department.equalsIgnoreCase(department)) {
+                double bonus = emp.salary * (bonusPercent / 100);
+                emp.salary += bonus;
+                System.out.println("Scenario 2: Employee " + emp.empId + " in " + department + " got bonus. New Salary: " + emp.salary);
+            }
+        }
+    }
+
+    // Scenario 3: Transfer funds between two accounts
+    public static void TransferFunds(int fromAccountId, int toAccountId, double amount) {
+        try {
+            if (!bankAccounts.containsKey(fromAccountId) || !bankAccounts.containsKey(toAccountId)) {
+                throw new Exception("Invalid account ID(s).");
+            }
+
+            BankAccount from = bankAccounts.get(fromAccountId);
+            BankAccount to = bankAccounts.get(toAccountId);
+
+            if (from.balance < amount) {
+                throw new Exception("Insufficient balance in source account.");
+            }
+
+            from.balance -= amount;
+            to.balance += amount;
+
+            System.out.println("Scenario 3: Transferred " + amount + " from Account " + fromAccountId + " to Account " + toAccountId);
+        } catch (Exception e) {
+            System.err.println("Scenario 3 Error: " + e.getMessage());
+        }
+    }
+
+    public static void main(String[] args) {
+        // Initializing savings accounts
+        savingsAccounts.put(101, new SavingsAccount(101, 10000));
+        savingsAccounts.put(102, new SavingsAccount(102, 20000));
+
+        // Initializing employees
+        employees.add(new Employee(1, "IT", 50000));
+        employees.add(new Employee(2, "HR", 40000));
+        employees.add(new Employee(3, "IT", 60000));
+
+        // Initializing bank accounts for transfer
+        bankAccounts.put(201, new BankAccount(201, 7000));
+        bankAccounts.put(202, new BankAccount(202, 5000));
+
+        // Execute stored procedure simulations
+        ProcessMonthlyInterest();                     // Scenario 1
+        UpdateEmployeeBonus("IT", 10);                // Scenario 2
+        TransferFunds(201, 202, 3000);                // Scenario 3 (Success)
+        TransferFunds(202, 201, 10000);               // Scenario 3 (Fail)
+    }
+}

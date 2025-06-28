@@ -1,0 +1,147 @@
+import java.util.*;
+
+// =========================
+// Simulated Package: CustomerManagement
+// =========================
+class Customer {
+    int customerId;
+    String name;
+    double balance;
+
+    public Customer(int id, String name, double balance) {
+        this.customerId = id;
+        this.name = name;
+        this.balance = balance;
+    }
+}
+
+class CustomerManagement {
+    static Map<Integer, Customer> customers = new HashMap<>();
+
+    public static void addCustomer(int id, String name, double balance) {
+        if (customers.containsKey(id)) {
+            System.out.println("Customer already exists.");
+            return;
+        }
+        customers.put(id, new Customer(id, name, balance));
+        System.out.println("Customer added: " + name);
+    }
+
+    public static void updateCustomer(int id, String newName) {
+        if (customers.containsKey(id)) {
+            customers.get(id).name = newName;
+            System.out.println("Customer updated: " + newName);
+        } else {
+            System.out.println("Customer not found.");
+        }
+    }
+
+    public static double getCustomerBalance(int id) {
+        return customers.getOrDefault(id, new Customer(0, "", 0.0)).balance;
+    }
+}
+
+// =========================
+// Simulated Package: EmployeeManagement
+// =========================
+class Employee {
+    int empId;
+    String name;
+    double monthlySalary;
+
+    public Employee(int id, String name, double salary) {
+        this.empId = id;
+        this.name = name;
+        this.monthlySalary = salary;
+    }
+}
+
+class EmployeeManagement {
+    static Map<Integer, Employee> employees = new HashMap<>();
+
+    public static void hireEmployee(int id, String name, double salary) {
+        employees.put(id, new Employee(id, name, salary));
+        System.out.println("Employee hired: " + name);
+    }
+
+    public static void updateEmployee(int id, String newName, double newSalary) {
+        if (employees.containsKey(id)) {
+            Employee e = employees.get(id);
+            e.name = newName;
+            e.monthlySalary = newSalary;
+            System.out.println("Employee updated: " + newName);
+        } else {
+            System.out.println("Employee not found.");
+        }
+    }
+
+    public static double calculateAnnualSalary(int id) {
+        return employees.containsKey(id) ? employees.get(id).monthlySalary * 12 : 0.0;
+    }
+}
+
+// =========================
+// Simulated Package: AccountOperations
+// =========================
+class Account {
+    int accountId;
+    int customerId;
+    double balance;
+
+    public Account(int accId, int custId, double balance) {
+        this.accountId = accId;
+        this.customerId = custId;
+        this.balance = balance;
+    }
+}
+
+class AccountOperations {
+    static Map<Integer, List<Account>> accountsByCustomer = new HashMap<>();
+
+    public static void openAccount(int accId, int custId, double initialBalance) {
+        accountsByCustomer.putIfAbsent(custId, new ArrayList<>());
+        accountsByCustomer.get(custId).add(new Account(accId, custId, initialBalance));
+        System.out.println("Account " + accId + " opened for Customer " + custId);
+    }
+
+    public static void closeAccount(int custId, int accId) {
+        if (accountsByCustomer.containsKey(custId)) {
+            List<Account> accounts = accountsByCustomer.get(custId);
+            accounts.removeIf(a -> a.accountId == accId);
+            System.out.println("Account " + accId + " closed for Customer " + custId);
+        } else {
+            System.out.println("Customer not found.");
+        }
+    }
+
+    public static double getTotalBalance(int custId) {
+        return accountsByCustomer.getOrDefault(custId, new ArrayList<>())
+                .stream()
+                .mapToDouble(a -> a.balance)
+                .sum();
+    }
+}
+
+// =========================
+// Main Class
+// =========================
+public class BankPackageSimulation {
+    public static void main(String[] args) {
+
+        // ====== CustomerManagement ======
+        CustomerManagement.addCustomer(1, "Ravi", 5000);
+        CustomerManagement.updateCustomer(1, "Ravi Kumar");
+        System.out.println("Customer Balance: ₹" + CustomerManagement.getCustomerBalance(1));
+
+        // ====== EmployeeManagement ======
+        EmployeeManagement.hireEmployee(101, "Priya", 30000);
+        EmployeeManagement.updateEmployee(101, "Priya Singh", 32000);
+        System.out.println("Annual Salary: ₹" + EmployeeManagement.calculateAnnualSalary(101));
+
+        // ====== AccountOperations ======
+        AccountOperations.openAccount(1001, 1, 20000);
+        AccountOperations.openAccount(1002, 1, 15000);
+        AccountOperations.closeAccount(1, 1002);
+        System.out.println("Total Customer Balance Across Accounts: ₹" + AccountOperations.getTotalBalance(1));
+    }
+}

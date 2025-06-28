@@ -1,0 +1,94 @@
+import java.time.LocalDate;
+import java.util.*;
+
+class Transaction {
+    int customerId;
+    LocalDate date;
+    double amount;
+    String type;
+
+    public Transaction(int customerId, LocalDate date, double amount, String type) {
+        this.customerId = customerId;
+        this.date = date;
+        this.amount = amount;
+        this.type = type;
+    }
+}
+
+class Account {
+    int accountId;
+    double balance;
+
+    public Account(int accountId, double balance) {
+        this.accountId = accountId;
+        this.balance = balance;
+    }
+}
+
+class Loan {
+    int loanId;
+    double interestRate;
+
+    public Loan(int loanId, double interestRate) {
+        this.loanId = loanId;
+        this.interestRate = interestRate;
+    }
+}
+
+public class BankCursorSimulation {
+
+    static List<Transaction> transactions = new ArrayList<>();
+    static Map<Integer, Account> accounts = new HashMap<>();
+    static Map<Integer, Loan> loans = new HashMap<>();
+
+    // Scenario 1: Generate monthly statements for all customers
+    public static void GenerateMonthlyStatements() {
+        System.out.println("Scenario 1: Monthly Statements");
+        LocalDate now = LocalDate.now();
+
+        for (Transaction tx : transactions) {
+            if (tx.date.getMonthValue() == now.getMonthValue() && tx.date.getYear() == now.getYear()) {
+                System.out.println("Customer ID: " + tx.customerId + ", Date: " + tx.date +
+                        ", Type: " + tx.type + ", Amount: ₹" + tx.amount);
+            }
+        }
+    }
+
+    // Scenario 2: Apply annual maintenance fee to all accounts
+    public static void ApplyAnnualFee(double feeAmount) {
+        System.out.println("\nScenario 2: Applying Annual Fee");
+        for (Account acc : accounts.values()) {
+            acc.balance -= feeAmount;
+            System.out.println("Account ID: " + acc.accountId + ", New Balance: ₹" + acc.balance);
+        }
+    }
+
+    // Scenario 3: Update loan interest rates based on new policy
+    public static void UpdateLoanInterestRates(double incrementPercent) {
+        System.out.println("\nScenario 3: Updating Loan Interest Rates");
+        for (Loan loan : loans.values()) {
+            loan.interestRate += loan.interestRate * (incrementPercent / 100);
+            System.out.println("Loan ID: " + loan.loanId + ", New Interest Rate: " + loan.interestRate + "%");
+        }
+    }
+
+    public static void main(String[] args) {
+        // Sample data for transactions
+        transactions.add(new Transaction(101, LocalDate.now().minusDays(5), 2000, "deposit"));
+        transactions.add(new Transaction(102, LocalDate.now().minusDays(15), 1000, "withdraw"));
+        transactions.add(new Transaction(103, LocalDate.now().minusMonths(1), 5000, "deposit")); // last month
+
+        // Sample data for accounts
+        accounts.put(1, new Account(1, 15000));
+        accounts.put(2, new Account(2, 12000));
+
+        // Sample data for loans
+        loans.put(501, new Loan(501, 7.5));
+        loans.put(502, new Loan(502, 6.8));
+
+        // Execute simulated cursor-based operations
+        GenerateMonthlyStatements();         // Scenario 1
+        ApplyAnnualFee(500);                // Scenario 2
+        UpdateLoanInterestRates(0.5);       // Scenario 3 (0.5% interest hike)
+    }
+}
