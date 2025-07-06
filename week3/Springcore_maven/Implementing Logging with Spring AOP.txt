@@ -1,0 +1,36 @@
+package com.library;
+
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.*;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class LibraryManagementApplication {
+
+    public static void main(String[] args) {
+        ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+        BookService bookService = context.getBean("bookService", BookService.class);
+        bookService.displayBookDetails();
+    }
+
+    // Service class
+    public static class BookService {
+        public void displayBookDetails() {
+            System.out.println("📚 Book: ‘Clean Architecture’ by Robert C. Martin");
+        }
+    }
+
+    // Aspect class
+    @Aspect
+    public static class LoggingAspect {
+
+        @Around("execution(* com.library.LibraryManagementApplication.BookService.*(..))")
+        public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
+            long start = System.currentTimeMillis();
+            Object result = joinPoint.proceed();
+            long end = System.currentTimeMillis();
+            System.out.println("🔍 Execution of " + joinPoint.getSignature() + " took " + (end - start) + " ms");
+            return result;
+        }
+    }
+}

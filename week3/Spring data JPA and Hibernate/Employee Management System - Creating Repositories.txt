@@ -1,0 +1,27 @@
+package com.employee;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+public class EmployeeRepositories {
+
+    // --- EMPLOYEE REPOSITORY ---
+    @Repository
+    public interface EmployeeRepository extends JpaRepository<EmployeeManagementEntities.Employee, Long> {
+
+        // Derived query methods
+        List<EmployeeManagementEntities.Employee> findByName(String name);
+        List<EmployeeManagementEntities.Employee> findByDepartmentName(String departmentName);
+        List<EmployeeManagementEntities.Employee> findByEmailContaining(String keyword);
+    }
+
+    // --- DEPARTMENT REPOSITORY ---
+    @Repository
+    public interface DepartmentRepository extends JpaRepository<EmployeeManagementEntities.Department, Long> {
+
+        // Derived query method
+        Department findByName(String name);
+    }
+}

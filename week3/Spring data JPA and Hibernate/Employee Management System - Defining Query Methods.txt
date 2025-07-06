@@ -1,0 +1,94 @@
+package com.employee;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.*;
+import org.springframework.stereotype.Repository;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.util.List;
+
+@SpringBootApplication
+public class EmployeeManagementQueryExample {
+    public static void main(String[] args) {
+        SpringApplication.run(EmployeeManagementQueryExample.class, args);
+    }
+
+    // --- ENTITY with NAMED QUERIES ---
+    @Entity
+    @Table(name = "employees")
+    @NamedQueries({
+        @NamedQuery(name = "Employee.findByDept", query = "SELECT e FROM Employee e WHERE e.department = ?1"),
+        @NamedQuery(name = "Employee.findByEmailDomain", query = "SELECT e FROM Employee e WHERE e.email LIKE %:domain")
+    })
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Employee {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+
+        private String name;
+        private String email;
+        private String department;
+    }
+
+    // --- REPOSITORY with Derived and Custom Queries ---
+    @Repository
+    public interface EmployeeRepository extends JpaRepository<Employee, Long> {
+
+        // Derived query method
+        List<Employee> findByDepartment(String department);
+
+        // JPQL with @Query
+        @Query("SELECT e FROM Employee e WHERE e.email LIKE %?1")
+        List<Employee> findByEmailEndingWith(String domain);
+
+        // Named query
+        @Query(name = "Employee.findByDept")
+        List<Employee> findByNamedDepartment(String department);
+
+        @Query(name = "Employee.findByEmailDomain")
+        List<Employee> findByNamedEmailDomain(@Param("domain") String domain);
+    }
+
+    // --- CONTROLLER to test the queries ---
+    @RestController
+    @RequestMapping("/employees")
+    public static class EmployeeController {
+        private final EmployeeRepository repo;
+
+        public EmployeeController(EmployeeRepository repo) {
+            this.repo = repo;
+        }
+
+        @GetMapping("/dept/{dept}")
+        public List<Employee> byDepartment(@PathVariable String dept) {
+            return repo.findByDepartment(dept);
+        }
+
+        @GetMapping("/email-end/{suffix}")
+        public List<Employee> byEmailSuffix(@PathVariable String suffix) {
+            return repo.findByEmailEndingWith(suffix);
+        }
+
+        @GetMapping("/named/dept/{dept}")
+        public List<Employee> byNamedDepartment(@PathVariable String dept) {
+            return repo.findByNamedDepartment(dept);
+        }
+
+        @GetMapping("/named/email-domain/{domain}")
+        public List<Employee> byNamedEmail(@PathVariable String domain) {
+            return repo.findByNamedEmailDomain(domain);
+        }
+
+        @PostMapping
+        public Employee add(@RequestBody Employee e) {
+            return repo.save(e);
+        }
+    }
+}

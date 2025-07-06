@@ -1,0 +1,33 @@
+package com.library;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class LibraryApp {
+
+    public static void main(String[] args) {
+        ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+        BookService service = context.getBean("bookService", BookService.class);
+        service.printBook();
+    }
+
+    // Service class
+    public static class BookService {
+        private BookRepository bookRepository;
+
+        public void setBookRepository(BookRepository bookRepository) {
+            this.bookRepository = bookRepository;
+        }
+
+        public void printBook() {
+            System.out.println("📖 Book Details: " + bookRepository.getBook());
+        }
+    }
+
+    // Repository class
+    public static class BookRepository {
+        public String getBook() {
+            return "‘Spring in Action’ by Craig Walls";
+        }
+    }
+}

@@ -1,0 +1,125 @@
+package com.employee;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.util.List;
+import java.util.Optional;
+
+@SpringBootApplication
+public class EmployeeManagementSystemApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(EmployeeManagementSystemApplication.class, args);
+    }
+
+    // ---------- ENTITIES ----------
+    @Entity
+    @Table(name = "departments")
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Department {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+        private String name;
+
+        @OneToMany(mappedBy = "department", cascade = CascadeType.ALL)
+        private List<Employee> employees;
+    }
+
+    @Entity
+    @Table(name = "employees")
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Employee {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+        private String name;
+        private String email;
+
+        @ManyToOne
+        @JoinColumn(name = "department_id")
+        private Department department;
+    }
+
+    // ---------- REPOSITORIES ----------
+    @Repository
+    public interface EmployeeRepository extends JpaRepository<Employee, Long> {}
+
+    @Repository
+    public interface DepartmentRepository extends JpaRepository<Department, Long> {}
+
+    // ---------- CONTROLLERS ----------
+    @RestController
+    @RequestMapping("/employees")
+    public static class EmployeeController {
+        private final EmployeeRepository employeeRepo;
+        private final DepartmentRepository departmentRepo;
+
+        public EmployeeController(EmployeeRepository employeeRepo, DepartmentRepository departmentRepo) {
+            this.employeeRepo = employeeRepo;
+            this.departmentRepo = departmentRepo;
+        }
+
+        @GetMapping
+        public List<Employee> getAllEmployees() {
+            return employeeRepo.findAll();
+        }
+
+        @PostMapping
+        public Employee createEmployee(@RequestBody Employee employee) {
+            return employeeRepo.save(employee);
+        }
+
+        @PutMapping("/{id}")
+        public Employee updateEmployee(@PathVariable Long id, @RequestBody Employee updated) {
+            updated.setId(id);
+            return employeeRepo.save(updated);
+        }
+
+        @DeleteMapping("/{id}")
+        public void deleteEmployee(@PathVariable Long id) {
+            employeeRepo.deleteById(id);
+        }
+    }
+
+    @RestController
+    @RequestMapping("/departments")
+    public static class DepartmentController {
+        private final DepartmentRepository departmentRepo;
+
+        public DepartmentController(DepartmentRepository departmentRepo) {
+            this.departmentRepo = departmentRepo;
+        }
+
+        @GetMapping
+        public List<Department> getAllDepartments() {
+            return departmentRepo.findAll();
+        }
+
+        @PostMapping
+        public Department createDepartment(@RequestBody Department department) {
+            return departmentRepo.save(department);
+        }
+
+        @PutMapping("/{id}")
+        public Department updateDepartment(@PathVariable Long id, @RequestBody Department updated) {
+            updated.setId(id);
+            return departmentRepo.save(updated);
+        }
+
+        @DeleteMapping("/{id}")
+        public void deleteDepartment(@PathVariable Long id) {
+            departmentRepo.deleteById(id);
+        }
+    }
+}

@@ -1,0 +1,36 @@
+package com.library;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Repository;
+import org.springframework.beans.factory.annotation.Autowired;
+
+public class LibraryManagementApplication {
+    public static void main(String[] args) {
+        ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+        BookService service = context.getBean(BookService.class);
+        service.displayBook();
+    }
+
+    @Service
+    public static class BookService {
+        private BookRepository bookRepository;
+
+        @Autowired
+        public void setBookRepository(BookRepository bookRepository) {
+            this.bookRepository = bookRepository;
+        }
+
+        public void displayBook() {
+            System.out.println("📚 Book Info: " + bookRepository.getBookData());
+        }
+    }
+
+    @Repository
+    public static class BookRepository {
+        public String getBookData() {
+            return "‘Head First Design Patterns’ by Freeman & Robson";
+        }
+    }
+}

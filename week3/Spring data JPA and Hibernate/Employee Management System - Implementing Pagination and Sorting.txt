@@ -1,0 +1,80 @@
+package com.employee;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Repository;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+@SpringBootApplication
+public class EmployeeManagementPagingSorting {
+    public static void main(String[] args) {
+        SpringApplication.run(EmployeeManagementPagingSorting.class, args);
+    }
+
+    // ---------- ENTITY ----------
+    @Entity
+    @Table(name = "employees")
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Employee {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+        private String name;
+        private String email;
+        private String department;
+        private double salary;
+    }
+
+    // ---------- REPOSITORY ----------
+    @Repository
+    public interface EmployeeRepository extends JpaRepository<Employee, Long> {
+        Page<Employee> findByDepartment(String department, Pageable pageable);
+    }
+
+    // ---------- CONTROLLER ----------
+    @RestController
+    @RequestMapping("/employees")
+    public static class EmployeeController {
+        private final EmployeeRepository repo;
+
+        public EmployeeController(EmployeeRepository repo) {
+            this.repo = repo;
+        }
+
+        // Pagination + Sorting endpoint
+        @GetMapping("/search")
+        public Page<Employee> getEmployees(
+                @RequestParam(defaultValue = "0") int page,
+                @RequestParam(defaultValue = "5") int size,
+                @RequestParam(defaultValue = "id") String sortBy,
+                @RequestParam(defaultValue = "asc") String direction,
+                @RequestParam(required = false) String department
+        ) {
+            Sort sort = direction.equalsIgnoreCase("desc") ?
+                        Sort.by(sortBy).descending() :
+                        Sort.by(sortBy).ascending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+
+            if (department != null) {
+                return repo.findByDepartment(department, pageable);
+            } else {
+                return repo.findAll(pageable);
+            }
+        }
+
+        // Add Employee (for testing)
+        @PostMapping
+        public Employee addEmployee(@RequestBody Employee employee) {
+            return repo.save(employee);
+        }
+    }
+}
+ 

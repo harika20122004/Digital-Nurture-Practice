@@ -1,0 +1,33 @@
+package com.library;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class LibraryApp {
+
+    public static void main(String[] args) {
+        ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+        BookService bookService = context.getBean("bookService", BookService.class);
+        bookService.displayBookInfo();
+    }
+
+    // Inner static class representing the Service
+    public static class BookService {
+        private BookRepository bookRepository;
+
+        public void setBookRepository(BookRepository bookRepository) {
+            this.bookRepository = bookRepository;
+        }
+
+        public void displayBookInfo() {
+            System.out.println("📘 Book Details: " + bookRepository.getBookDetails());
+        }
+    }
+
+    // Inner static class representing the Repository
+    public static class BookRepository {
+        public String getBookDetails() {
+            return "‘Clean Code’ by Robert C. Martin (ISBN: 978-0132350884)";
+        }
+    }
+}

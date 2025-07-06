@@ -1,0 +1,123 @@
+package com.employee;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
+import org.springframework.context.annotation.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.web.bind.annotation.*;
+
+import javax.sql.DataSource;
+import java.util.List;
+import java.util.Map;
+
+@SpringBootApplication
+public class EmployeeManagementMultiDataSourceApp {
+    public static void main(String[] args) {
+        SpringApplication.run(EmployeeManagementMultiDataSourceApp.class, args);
+    }
+
+    // ========== ENTITIES ==========
+    @Entity
+    @Table(name = "employees")
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Employee {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+
+        private String name;
+        private String department;
+    }
+
+    @Entity
+    @Table(name = "audit_logs")
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AuditLog {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+
+        private String action;
+        private String actor;
+    }
+
+    // ========== PRIMARY REPOSITORY ==========
+    @Repository
+    public interface EmployeeRepository extends JpaRepository<Employee, Long> {}
+
+    // ========== SECONDARY CONFIG ==========
+    @Configuration
+    @EnableTransactionManagement
+    @EnableJpaRepositories(
+        basePackages = "com.employee.auditrepo",
+        entityManagerFactoryRef = "auditEntityManagerFactory",
+        transactionManagerRef = "auditTransactionManager"
+    )
+    public static class AuditDataSourceConfig {
+
+        @Bean(name = "auditDataSource")
+        @ConfigurationProperties(prefix = "spring.audit.datasource")
+        public DataSource auditDataSource() {
+            return DataSourceBuilder.create().build();
+        }
+
+        @Bean(name = "auditEntityManagerFactory")
+        public LocalContainerEntityManagerFactoryBean auditEntityManagerFactory(
+                EntityManagerFactoryBuilder builder,
+                @Qualifier("auditDataSource") DataSource dataSource
+        ) {
+            return builder
+                    .dataSource(dataSource)
+                    .packages(AuditLog.class)
+                    .persistenceUnit("audit")
+                    .build();
+        }
+
+        @Bean(name = "auditTransactionManager")
+        public PlatformTransactionManager auditTransactionManager(
+                @Qualifier("auditEntityManagerFactory") EntityManagerFactory emf
+        ) {
+            return new JpaTransactionManager(emf);
+        }
+    }
+
+    // ========== SECONDARY REPOSITORY ==========
+    @Repository
+    @ComponentScan("com.employee.auditrepo")
+    public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {}
+
+    // ========== CONTROLLER ==========
+    @RestController
+    public static class MultiDbController {
+        private final EmployeeRepository empRepo;
+        private final AuditLogRepository auditRepo;
+
+        public MultiDbController(EmployeeRepository empRepo, AuditLogRepository auditRepo) {
+            this.empRepo = empRepo;
+            this.auditRepo = auditRepo;
+        }
+
+        @PostMapping("/employees")
+        public Employee addEmployee(@RequestBody Employee emp) {
+            auditRepo.save(new AuditLog(null, "Added Employee: " + emp.getName(), "admin"));
+            return empRepo.save(emp);
+        }
+
+        @GetMapping("/audit")
+        public List<AuditLog> getLogs() {
+            return auditRepo.findAll();
+        }
+    }
+}

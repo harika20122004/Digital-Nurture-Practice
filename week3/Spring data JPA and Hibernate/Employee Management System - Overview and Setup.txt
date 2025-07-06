@@ -1,0 +1,58 @@
+package com.employee;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import javax.persistence.*;
+import java.util.List;
+import lombok.*;
+
+@SpringBootApplication
+public class EmployeeManagementSystemApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(EmployeeManagementSystemApplication.class, args);
+    }
+
+    // --- ENTITY ---
+    @Entity
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Employee {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+
+        private String name;
+        private String department;
+        private double salary;
+    }
+
+    // --- REPOSITORY ---
+    @Repository
+    public interface EmployeeRepository extends JpaRepository<Employee, Long> {}
+
+    // --- CONTROLLER ---
+    @RestController
+    @RequestMapping("/employees")
+    public static class EmployeeController {
+        private final EmployeeRepository repo;
+
+        public EmployeeController(EmployeeRepository repo) {
+            this.repo = repo;
+        }
+
+        @GetMapping
+        public List<Employee> getAll() {
+            return repo.findAll();
+        }
+
+        @PostMapping
+        public Employee create(@RequestBody Employee employee) {
+            return repo.save(employee);
+        }
+    }
+}

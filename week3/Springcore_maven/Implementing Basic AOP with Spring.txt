@@ -1,0 +1,39 @@
+package com.library;
+
+import org.aspectj.lang.annotation.*;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.stereotype.Component;
+
+// Main class
+public class LibraryManagementApplication {
+    public static void main(String[] args) {
+        ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+        BookService service = context.getBean(BookService.class);
+        service.issueBook();
+    }
+
+    // Target class
+    @Component
+    public static class BookService {
+        public void issueBook() {
+            System.out.println("📕 Issuing 'Domain-Driven Design' by Eric Evans...");
+        }
+    }
+
+    // Aspect class
+    @Aspect
+    @Component
+    public static class LoggingAspect {
+
+        @Before("execution(* com.library.LibraryManagementApplication.BookService.*(..))")
+        public void logBefore() {
+            System.out.println("🔍 [LOG] Method execution starting...");
+        }
+
+        @After("execution(* com.library.LibraryManagementApplication.BookService.*(..))")
+        public void logAfter() {
+            System.out.println("✅ [LOG] Method execution finished.");
+        }
+    }
+}

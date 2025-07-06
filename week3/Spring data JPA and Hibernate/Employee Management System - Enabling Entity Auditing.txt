@@ -1,0 +1,85 @@
+package com.employee;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.annotation.*;
+import org.springframework.data.domain.AuditorAware;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
+import java.util.*;
+
+@SpringBootApplication
+@EnableJpaAuditing(auditorAwareRef = "auditorProvider")
+public class EmployeeManagementAuditApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(EmployeeManagementAuditApplication.class, args);
+    }
+
+    // Simulate logged-in user
+    @Bean
+    public AuditorAware<String> auditorProvider() {
+        return () -> Optional.of("adminUser"); // hardcoded user for demo
+    }
+
+    // ---------- ENTITY ----------
+    @Entity
+    @Table(name = "employees")
+    @EntityListeners(AuditingEntityListener.class)
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Employee {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+
+        private String name;
+        private String email;
+        private String department;
+
+        // Auditing fields
+        @CreatedBy
+        private String createdBy;
+
+        @LastModifiedBy
+        private String modifiedBy;
+
+        @CreatedDate
+        private LocalDateTime createdDate;
+
+        @LastModifiedDate
+        private LocalDateTime modifiedDate;
+    }
+
+    // ---------- REPOSITORY ----------
+    public interface EmployeeRepository extends JpaRepository<Employee, Long> {}
+
+    // ---------- CONTROLLER ----------
+    @RestController
+    @RequestMapping("/employees")
+    public static class EmployeeController {
+        private final EmployeeRepository repo;
+
+        public EmployeeController(EmployeeRepository repo) {
+            this.repo = repo;
+        }
+
+        @PostMapping
+        public Employee addEmployee(@RequestBody Employee emp) {
+            return repo.save(emp);
+        }
+
+        @GetMapping
+        public List<Employee> getAll() {
+            return repo.findAll();
+        }
+    }
+}

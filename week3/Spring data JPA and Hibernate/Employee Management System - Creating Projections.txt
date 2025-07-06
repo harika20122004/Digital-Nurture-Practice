@@ -1,0 +1,91 @@
+package com.employee;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.*;
+import org.springframework.data.repository.query.Param;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Repository;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.util.List;
+
+@SpringBootApplication
+public class EmployeeManagementProjectionApp {
+    public static void main(String[] args) {
+        SpringApplication.run(EmployeeManagementProjectionApp.class, args);
+    }
+
+    // ---------- ENTITY ----------
+    @Entity
+    @Table(name = "employees")
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Employee {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+
+        private String name;
+        private String email;
+        private String department;
+        private double salary;
+    }
+
+    // ---------- INTERFACE-BASED PROJECTION ----------
+    public interface EmployeeNameEmail {
+        String getName();
+        String getEmail();
+    }
+
+    // ---------- CLASS-BASED PROJECTION (DTO) ----------
+    @Data
+    @AllArgsConstructor
+    public static class EmployeeInfoDTO {
+        private String name;
+        private double salary;
+    }
+
+    // ---------- REPOSITORY ----------
+    @Repository
+    public interface EmployeeRepository extends JpaRepository<Employee, Long> {
+
+        // Interface-based projection
+        List<EmployeeNameEmail> findByDepartment(String department);
+
+        // DTO projection using JPQL constructor expression
+        @Query("SELECT new com.employee.EmployeeManagementProjectionApp.EmployeeInfoDTO(e.name, e.salary) FROM Employee e WHERE e.salary > :minSalary")
+        List<EmployeeInfoDTO> findEmployeesWithHighSalary(@Param("minSalary") double minSalary);
+    }
+
+    // ---------- CONTROLLER ----------
+    @RestController
+    @RequestMapping("/employees")
+    public static class EmployeeController {
+        private final EmployeeRepository repo;
+
+        public EmployeeController(EmployeeRepository repo) {
+            this.repo = repo;
+        }
+
+        @PostMapping
+        public Employee addEmployee(@RequestBody Employee employee) {
+            return repo.save(employee);
+        }
+
+        // Interface-based projection endpoint
+        @GetMapping("/summary/by-department")
+        public List<EmployeeNameEmail> getBasicInfo(@RequestParam String department) {
+            return repo.findByDepartment(department);
+        }
+
+        // DTO-based projection endpoint
+        @GetMapping("/high-earners")
+        public List<EmployeeInfoDTO> getHighEarners(@RequestParam double salary) {
+            return repo.findEmployeesWithHighSalary(salary);
+        }
+    }
+}

@@ -1,0 +1,39 @@
+package com.library;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class LibraryManagementApplication {
+
+    public static void main(String[] args) {
+        // Load Spring IoC container
+        ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+
+        // Get BookService bean from container
+        BookService bookService = context.getBean("bookService", BookService.class);
+
+        // Use the service
+        bookService.displayBookDetails();
+    }
+
+    // BookService class with setter-based DI
+    public static class BookService {
+        private BookRepository bookRepository;
+
+        // Setter method for DI
+        public void setBookRepository(BookRepository bookRepository) {
+            this.bookRepository = bookRepository;
+        }
+
+        public void displayBookDetails() {
+            System.out.println("📚 Book Information: " + bookRepository.getBookInfo());
+        }
+    }
+
+    // BookRepository class
+    public static class BookRepository {
+        public String getBookInfo() {
+            return "‘Effective Java’ by Joshua Bloch (ISBN: 978-0134685991)";
+        }
+    }
+}

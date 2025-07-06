@@ -1,0 +1,40 @@
+package com.library;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class LibraryManagementApplication {
+    public static void main(String[] args) {
+        ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+        BookService service = context.getBean("bookService", BookService.class);
+        service.showDetails();
+    }
+
+    // BookService with both constructor and setter injection
+    public static class BookService {
+        private String libraryName;
+        private BookRepository bookRepository;
+
+        // Constructor injection
+        public BookService(String libraryName) {
+            this.libraryName = libraryName;
+        }
+
+        // Setter injection
+        public void setBookRepository(BookRepository bookRepository) {
+            this.bookRepository = bookRepository;
+        }
+
+        public void showDetails() {
+            System.out.println("🏛️ Welcome to " + libraryName);
+            System.out.println("📘 Book Available: " + bookRepository.getBook());
+        }
+    }
+
+    // BookRepository class
+    public static class BookRepository {
+        public String getBook() {
+            return "‘Refactoring’ by Martin Fowler";
+        }
+    }
+}

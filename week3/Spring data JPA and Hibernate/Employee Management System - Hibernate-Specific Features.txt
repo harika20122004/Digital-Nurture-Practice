@@ -1,0 +1,70 @@
+package com.employee;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@SpringBootApplication
+public class EmployeeManagementHibernateFeaturesApp {
+    public static void main(String[] args) {
+        SpringApplication.run(EmployeeManagementHibernateFeaturesApp.class, args);
+    }
+
+    // ---------- ENTITY ----------
+    @Entity
+    @Table(name = "employees")
+    @DynamicInsert    // Only non-null columns in INSERT
+    @DynamicUpdate    // Only changed fields in UPDATE
+    @BatchSize(size = 10) // Improves SELECT performance with batching
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Employee {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+
+        private String name;
+
+        private String email;
+
+        private String department;
+
+        private Double salary;
+    }
+
+    // ---------- REPOSITORY ----------
+    public interface EmployeeRepository extends JpaRepository<Employee, Long> {}
+
+    // ---------- CONTROLLER ----------
+    @RestController
+    @RequestMapping("/employees")
+    public static class EmployeeController {
+        private final EmployeeRepository repo;
+
+        public EmployeeController(EmployeeRepository repo) {
+            this.repo = repo;
+        }
+
+        // Batch insert endpoint
+        @PostMapping("/batch")
+        @Transactional
+        public List<Employee> saveAll(@RequestBody List<Employee> employees) {
+            return repo.saveAll(employees);
+        }
+
+        @GetMapping
+        public List<Employee> getAll() {
+            return repo.findAll();
+        }
+    }
+}
