@@ -1,0 +1,167 @@
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.WebClient;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+@SpringBootApplication
+public class MicroservicesApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(MicroservicesApplication.class, args);
+    }
+
+    @Bean
+    public WebClient.Builder webClientBuilder() {
+        return WebClient.builder();
+    }
+}
+
+// ----- USER SERVICE -----
+@RestController
+@RequestMapping("/users")
+class UserController {
+    private Map<Long, User> userDb = new ConcurrentHashMap<>();
+    private long userIdCounter = 1;
+
+    @PostMapping
+    public User createUser(@RequestBody User user) {
+        user.setId(userIdCounter++);
+        userDb.put(user.getId(), user);
+        return user;
+    }
+
+    @GetMapping("/{id}")
+    public User getUser(@PathVariable Long id) {
+        return userDb.get(id);
+    }
+}
+
+class User {
+    private Long id;
+    private String name;
+    private String email;
+    // getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+}
+
+// ----- ORDER SERVICE -----
+@RestController
+@RequestMapping("/orders")
+class OrderController {
+    private Map<Long, Order> orderDb = new ConcurrentHashMap<>();
+    private long orderIdCounter = 1;
+
+    private final WebClient.Builder webClientBuilder;
+
+    public OrderController(WebClient.Builder builder) {
+        this.webClientBuilder = builder;
+    }
+
+    @PostMapping
+    public Order createOrder(@RequestBody Order order) {
+        order.setId(orderIdCounter++);
+        orderDb.put(order.getId(), order);
+        return order;
+    }
+
+    @GetMapping("/{id}/user")
+    public String getUserDetailsForOrder(@PathVariable Long id) {
+        Order order = orderDb.get(id);
+        return webClientBuilder.build()
+                .get()
+                .uri("http://localhost:8080/users/" + order.getUserId())
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+    }
+}
+
+class Order {
+    private Long id;
+    private Long userId;
+    private String productName;
+    // getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+    public String getProductName() { return productName; }
+    public void setProductName(String productName) { this.productName = productName; }
+}
+
+// ----- PRODUCT SERVICE -----
+@RestController
+@RequestMapping("/products")
+class ProductController {
+    private Map<Long, Product> productDb = new ConcurrentHashMap<>();
+    private long productIdCounter = 1;
+
+    @PostMapping
+    public Product createProduct(@RequestBody Product product) {
+        product.setId(productIdCounter++);
+        productDb.put(product.getId(), product);
+        return product;
+    }
+
+    @GetMapping("/{id}")
+    public Product getProduct(@PathVariable Long id) {
+        return productDb.get(id);
+    }
+}
+
+class Product {
+    private Long id;
+    private String name;
+    private int stock;
+    // getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public int getStock() { return stock; }
+    public void setStock(int stock) { this.stock = stock; }
+}
+
+// ----- INVENTORY SERVICE -----
+@RestController
+@RequestMapping("/inventory")
+class InventoryController {
+    private final WebClient.Builder webClientBuilder;
+
+    public InventoryController(WebClient.Builder builder) {
+        this.webClientBuilder = builder;
+    }
+
+    @GetMapping("/product/{productId}")
+    public String getProductStock(@PathVariable Long productId) {
+        return webClientBuilder.build()
+                .get()
+                .uri("http://localhost:8080/products/" + productId)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+    }
+}
+
+// ----- MOCK API GATEWAY LOGIC -----
+@RestController
+@RequestMapping("/gateway")
+class ApiGatewayController {
+
+    @GetMapping("/route/{service}/{id}")
+    public String route(@PathVariable String service, @PathVariable Long id) {
+        switch (service.toLowerCase()) {
+            case "user": return "Forwarding to /users/" + id;
+            case "order": return "Forwarding to /orders/" + id;
+            case "product": return "Forwarding to /products/" + id;
+            default: return "Unknown service";
+        }
+    }
+}
